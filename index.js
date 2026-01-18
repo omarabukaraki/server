@@ -15,8 +15,17 @@ const io = new Server(server, {
 });
 
 io.on("connection", (socket) => {
-  socket.on("join_room", (room) => {
+  socket.on("join_room", (room, username) => {
     socket.join(room);
+    socket.to(room).emit("receive_message", {
+      room: room,
+      username: username,
+      message: username + " has joined the room",
+      time:
+        new Date(Date.now()).getHours() +
+        ":" +
+        new Date(Date.now()).getMinutes(),
+    });
   });
 
   socket.on("send_message", (data) => {
