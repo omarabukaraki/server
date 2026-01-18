@@ -1,33 +1,41 @@
 const express = require("express");
 const http = require("http");
-const cors = require("cors");
 const { Server } = require("socket.io");
+
 const app = express();
 
-app.use(cors());
 const server = http.createServer(app);
 
-const io = new Server(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"],
-  },
-});
+let io;
 
-io.on("connection", (socket) => {
-  socket.on("join_room", (room) => {
-    socket.join(room);
+if (!io) {
+  io = new Server(server, {
+    cors: {
+      origin: "https://client-rho-sandy.vercel.app",
+      methods: ["GET", "POST"],
+    },
   });
 
-  socket.on("send_message", (data) => {
-    socket.to(data.room).emit("receive_message", data);
-  });
+  io.on("connection", (socket) => {
+    console.log("user connected:", socket.id);
 
-  socket.on("disconnect", () => {
-    console.log("user disconnected");
-  });
-});
+    socket.on("join_room", (room) => {
+      socket.join(room);
+    });
 
-server.listen(3001, () => {
-  console.log("listening on *:3001");
-});
+    socket.on("send_message", (data) => {
+      socket.to(data.room).emit("receive_message", data);
+    });
+
+    socket.on("disconnect", () => {
+      console.log("user disconnected");
+    });
+  });
+}
+
+module.exports = (req, res) => {
+  if (!res.socket.server.io) {
+    res.socket.server.io = io;
+  }
+  res.end();
+};
